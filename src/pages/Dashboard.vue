@@ -30,6 +30,13 @@
         No cards yet. Click the ➕ button to add one!
       </div>
 
+      <div class="flex justify-center mb-6">
+        <button @click="goToCategories"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition duration-300">
+          Manage Categories
+        </button>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="card in cards" :key="card.id" :style="getCardStyle(card)"
           class="p-5 rounded-lg shadow border-2 transform transition hover:scale-105 hover:shadow-lg">
@@ -245,6 +252,12 @@ function hexToRgba(hex: string, alpha: number) {
 
 // Dropdown state
 const dropdownOpen = ref(false)
+
+
+function goToCategories() {
+  router.push('/categories')
+}
+
 </script>
 
 <style scoped>
