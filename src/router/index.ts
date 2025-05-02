@@ -9,7 +9,7 @@ const routes = [
   { path: '/', component: SplashScreen },
   { path: '/login', component: LoginScreen },
   { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
-  { path: '/categories', component: Categories, meta: { requiresAuth: true }},
+  { path: '/manage-categories', component: Categories, meta: { requiresAuth: true }},
 ]
 
 const router = createRouter({

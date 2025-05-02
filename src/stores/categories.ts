@@ -2,22 +2,39 @@ import { defineStore } from 'pinia'
 
 export const useCategoriesStore = defineStore('categories', {
   state: () => ({
-    allCategories: JSON.parse(localStorage.getItem('categories') || '[]')
+    allCategories: [] as { name: string, color: string }[],
+    cards: [] as any[], // optional
   }),
   actions: {
-    addCategory(category: { name: string, color: string }) {
-      this.allCategories.push(category)
-      localStorage.setItem('categories', JSON.stringify(this.allCategories))
-    },
-    updateCategoryColor(name: string, color: string) {
-      const cat = this.allCategories.find(c => c.name === name)
-      if (cat) {
-        cat.color = color
+    loadCategories() {
+      const stored = localStorage.getItem('categories')
+      if (stored) {
+        this.allCategories = JSON.parse(stored)
+      } else {
+        // Default categories if none exist
+        this.allCategories = [
+          { name: 'Personal', color: '#EF4444' },  // red
+          { name: 'Work', color: '#3B82F6' },      // blue
+          { name: 'Study', color: '#10B981' },     // green
+        ]
         localStorage.setItem('categories', JSON.stringify(this.allCategories))
       }
     },
-    loadCategories() {
-      this.allCategories = JSON.parse(localStorage.getItem('categories') || '[]')
-    }
-  }
+
+    updateCategoryNames(updatedCategories: { name: string, color: string }[]) {
+      this.allCategories = updatedCategories
+      this.updateCardCategories(updatedCategories)
+      localStorage.setItem('categories', JSON.stringify(this.allCategories))  // save after update
+    },
+
+    updateCardCategories(updatedCategories: { name: string, color: string }[]) {
+      this.cards.forEach(card => {
+        const category = updatedCategories.find(cat => cat.name === card.categoryName)
+        if (category) {
+          card.categoryName = category.name
+          card.categoryColor = category.color
+        }
+      })
+    },
+  },
 })

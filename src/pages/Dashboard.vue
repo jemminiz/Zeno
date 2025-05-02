@@ -21,6 +21,14 @@
     </header>
 
     <main class="p-6">
+      <div class="flex justify-end mb-4">
+        <router-link to="/manage-categories">
+          <button class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-red-350 rounded shadow">
+            Manage Categories
+          </button>
+        </router-link>
+      </div>
+
       <div v-if="cards.length === 0" class="text-center text-gray-400 py-20">
         <p>No cards yet. Click the + button to get started!</p>
       </div>
@@ -57,9 +65,15 @@
 
             <!-- Category Dropdown -->
             <select v-model="card.draftCategory" class="w-full bg-gray-800 text-white p-2 rounded mb-2">
-              <option v-for="cat in categoriesStore.allCategories" :key="cat.name" :value="cat.name">
+              <option disabled value="">Select Category</option>
+              <option
+                v-for="cat in categoriesStore.allCategories"
+                :key="cat.name"
+                :value="cat.name"
+              >
                 {{ cat.name }}
               </option>
+              <option v-if="categoriesStore.allCategories.length === 0" disabled>No categories available</option>
             </select>
 
             <!-- Personal Color -->
@@ -84,14 +98,24 @@
         <span class="text-2xl">+</span>
       </button>
     </div>
+
+    <!-- Warning Modal -->
+    <WarningModal
+      :visible="showModal"
+      :title="modalTitle"
+      :message="modalMessage"
+      :onConfirm="runConfirm"
+      :onCancel="cancelModal"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/utils/auth'
 import { useCategoriesStore } from '@/stores/categories'
+import WarningModal from '@/components/WarningModal.vue'  // Import the Warning Modal
 
 const router = useRouter()
 const { logout } = useAuth()
@@ -100,12 +124,21 @@ const categoriesStore = useCategoriesStore()
 const dropdownOpen = ref(false)
 const cards = ref([])
 
+const showModal = ref(false)
+const modalTitle = ref('')
+const modalMessage = ref('')
+let confirmCallback = () => {}
+
 watch(cards, (newCards) => {
   localStorage.setItem('cards', JSON.stringify(newCards))
 }, { deep: true })
 
 const savedCards = JSON.parse(localStorage.getItem('cards') || '[]')
 cards.value = savedCards
+
+onMounted(() => {
+  categoriesStore.loadCategories()
+})
 
 function toggleDropdown() {
   dropdownOpen.value = !dropdownOpen.value
@@ -149,22 +182,34 @@ function cancelEditing(card: any) {
 }
 
 function saveEditing(card: any) {
+  // Save the changes
   card.title = card.draftTitle
   card.content = card.draftContent
   card.category = card.draftCategory
   card.color = card.draftColor
   card.editing = false
+
+  // Update cards in localStorage
+  localStorage.setItem('cards', JSON.stringify(cards.value))
 }
 
 function confirmDelete(card: any) {
-  if (confirm('Are you sure you want to delete this card?')) {
-    cards.value = cards.value.filter(c => c.id !== card.id)
-  }
+  confirmAction(
+    'Delete Card',
+    'Are you sure you want to delete this card?',
+    () => {
+      cards.value = cards.value.filter(c => c.id !== card.id)
+      localStorage.setItem('cards', JSON.stringify(cards.value))  // Update localStorage after deletion
+    }
+  )
 }
 
 function getCardStyle(card: any) {
   let color = ''
-  if (card.color && card.color !== '#ffffff') {
+
+  if (card.editing) {
+    color = card.draftColor || '#4B5563'
+  } else if (card.color && card.color !== '#ffffff') {
     color = card.color
   } else {
     const category = categoriesStore.allCategories.find(cat => cat.name === card.category)
@@ -176,5 +221,21 @@ function getCardStyle(card: any) {
     border: `1px solid ${color}`,
     boxShadow: `0 0 4px ${color}`,
   }
+}
+
+function confirmAction(title: string, message: string, onConfirm: () => void) {
+  modalTitle.value = title
+  modalMessage.value = message
+  confirmCallback = onConfirm
+  showModal.value = true
+}
+
+function cancelModal() {
+  showModal.value = false
+}
+
+function runConfirm() {
+  showModal.value = false
+  confirmCallback()
 }
 </script>
