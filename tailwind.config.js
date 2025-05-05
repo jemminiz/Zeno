@@ -4,8 +4,8 @@ module.exports = {
     extend: {
       colors: {
         customBlue: '#444A59',
-      }
+      },
     },
   },
   plugins: [],
-}
+};

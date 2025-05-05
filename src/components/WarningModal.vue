@@ -12,7 +12,7 @@
         />
       </div>
       <div class="flex justify-end space-x-3">
-        <button @click="props.onCancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Cancel</button>
+        <button @click="handleCancel" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Cancel</button>
         <button @click="handleConfirm" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded">Confirm</button>
       </div>
     </div>
@@ -34,7 +34,11 @@ const props = defineProps<{
 const inputValue = ref('')
 
 function handleConfirm() {
-  props.onConfirm(inputValue.value)
-  inputValue.value = '' // Reset input value after confirmation
+  props.onConfirm(inputValue.value);
+}
+
+function handleCancel() {
+  inputValue.value = ''; // Reset input value only on cancel
+  props.onCancel();
 }
 </script>
