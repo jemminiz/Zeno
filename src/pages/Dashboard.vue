@@ -1,241 +1,223 @@
 <template>
   <div class="min-h-screen bg-gray-800 text-red-300">
-    <!-- Topbar -->
     <header class="flex justify-between items-center bg-gray-900 px-6 py-4 shadow">
-      <div class="flex items-center space-x-3">
-        <img src="@/assets/logo.png" alt="Zeno Logo" class="h-8 w-8" />
-        <h1 class="text-2xl font-bold text-red-300">Zeno Dashboard</h1>
-      </div>
-      <div class="relative" @click="toggleDropdown">
-        <button class="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700">
-          <span>Jonathan</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <div v-if="dropdownOpen" class="absolute right-0 mt-2 w-40 bg-gray-800 border border-gray-700 rounded shadow z-50">
-          <a href="#" class="block px-4 py-2 hover:bg-gray-700">Profile</a>
-          <a href="#" @click="handleLogout" class="block px-4 py-2 hover:bg-gray-700 text-red-400">Logout</a>
-        </div>
-      </div>
+      <h1 class="text-2xl font-bold text-red-300">Zeno Dashboard</h1>
     </header>
 
     <main class="p-6">
-      <div class="flex justify-end mb-4">
-        <router-link to="/manage-categories">
-          <button class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-red-350 rounded shadow">
-            Manage Categories
-          </button>
-        </router-link>
-      </div>
-
-      <div v-if="cards.length === 0" class="text-center text-gray-400 py-20">
-        <p>No cards yet. Click the + button to get started!</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
-          v-for="card in cards"
-          :key="card.id"
-          class="p-5 rounded-lg transition-colors duration-200"
-          :style="getCardStyle(card)"
+          v-for="(card, index) in cards"
+          :key="index"
+          class="relative p-4 bg-gray-900 rounded shadow text-white"
         >
-          <!-- View Mode -->
-          <div v-if="!card.editing">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-lg font-semibold text-white">{{ card.title }}</h3>
-              <div class="flex space-x-2">
-                <button @click="startEditing(card)" class="bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 text-white border border-gray-600">✏️</button>
-                <button @click="confirmDelete(card)" class="bg-gray-700 px-2 py-1 rounded hover:bg-red-600 text-red-400 border border-red-400">🗑️</button>
-              </div>
-            </div>
-            <p class="text-gray-300 mb-2">{{ card.content || 'Sample content...' }}</p>
-            <p class="text-sm text-gray-400 italic">Category: {{ card.category || 'Uncategorized' }}</p>
+          <!-- Display the card name -->
+          <h2 class="text-lg font-bold mb-2">{{ card.name }}</h2>
+
+          <!-- Render Card -->
+          <component
+            v-if="getCardComponent(card.type)"
+            :is="getCardComponent(card.type)"
+            v-bind="card.props"
+          />
+
+          <!-- Edit and Delete Buttons -->
+          <div class="absolute top-2 right-2 flex space-x-2">
+            <button
+              @click="editCard(index)"
+              class="text-white px-2 py-1 rounded hover:bg-gray-500 bg-customBlue"
+            >
+              Edit
+            </button>
+            <button
+              @click="confirmDeleteCard(index)"
+              class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
+            >
+              Delete
+            </button>
           </div>
+        </div>
+      </div>
 
-          <!-- Edit Mode -->
-          <div v-else>
-            <input v-model="card.draftTitle" placeholder="Title" class="w-full bg-gray-800 text-white p-2 rounded mb-2" />
-            <textarea
-              v-model="card.draftContent"
-              rows="3"
-              placeholder="Details..."
-              class="w-full bg-gray-800 text-white p-2 rounded mb-2 resize-none"
-            ></textarea>
+      <!-- Add Card Button -->
+      <div class="fixed bottom-4 right-4">
+        <button
+          @click="toggleDropdown"
+          class="bg-red-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-red-500"
+        >
+          Add Card
+        </button>
+        <div v-if="dropdownOpen">
+          <!-- Fullscreen Overlay -->
+          <div
+            class="fixed inset-0 z-40"
+            @click="closeDropdown"
+          ></div>
 
-            <!-- Category Dropdown -->
-            <select v-model="card.draftCategory" class="w-full bg-gray-800 text-white p-2 rounded mb-2">
-              <option disabled value="">Select Category</option>
-              <option
-                v-for="cat in categoriesStore.allCategories"
-                :key="cat.name"
-                :value="cat.name"
-              >
-                {{ cat.name }}
-              </option>
-              <option v-if="categoriesStore.allCategories.length === 0" disabled>No categories available</option>
-            </select>
-
-            <!-- Personal Color -->
-            <label class="block text-sm mb-1 text-gray-400">Personal Card Color:</label>
-            <input type="color" v-model="card.draftColor" class="mb-4 w-12 h-8 bg-transparent border-none cursor-pointer" />
-
-            <div class="flex justify-end space-x-2">
-              <button @click="cancelEditing(card)" class="px-3 py-1 bg-gray-600 rounded hover:bg-gray-500">Cancel</button>
-              <button @click="saveEditing(card)" class="px-3 py-1 bg-red-600 rounded hover:bg-red-700">Save</button>
-            </div>
+          <!-- Dropdown Menu -->
+          <div
+            class="absolute bottom-12 right-0 w-48 bg-gray-900 border border-gray-700 rounded shadow-lg z-50"
+          >
+            <button
+              v-for="type in cardTypes"
+              :key="type.value"
+              @click="addCard(type.value)"
+              class="block w-full text-left px-4 py-2 hover:bg-gray-700"
+            >
+              {{ type.label }}
+            </button>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- Add Button -->
-    <div class="fixed bottom-6 right-6">
-      <button
-        @click="addCard"
-        class="w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center shadow-lg transition"
-      >
-        <span class="text-2xl">+</span>
-      </button>
-    </div>
-
     <!-- Warning Modal -->
     <WarningModal
-      :visible="showModal"
-      :title="modalTitle"
-      :message="modalMessage"
-      :onConfirm="runConfirm"
-      :onCancel="cancelModal"
+      v-if="warningModal.visible"
+      :visible="warningModal.visible"
+      :title="warningModal.title"
+      :message="warningModal.message"
+      :showInput="warningModal.showInput"
+      :onConfirm="warningModal.onConfirm"
+      :onCancel="warningModal.onCancel"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/utils/auth'
-import { useCategoriesStore } from '@/stores/categories'
-import WarningModal from '@/components/WarningModal.vue'  // Import the Warning Modal
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import AccountBalanceCard from '@/components/cards/AccountBalanceCard.vue';
+import SpendingSummaryCard from '@/components/cards/SpendingSummaryCard.vue';
+import UpcomingBillsCard from '@/components/cards/UpcomingBillsCard.vue';
+import BudgetMathCard from '@/components/cards/BudgetCard.vue';
+import WarningModal from '@/components/WarningModal.vue';
 
-const router = useRouter()
-const { logout } = useAuth()
-const categoriesStore = useCategoriesStore()
+const API_URL = import.meta.env.VITE_API_URL;
 
-const dropdownOpen = ref(false)
-const cards = ref([])
+const cards = ref([]); // Cards array
 
-const showModal = ref(false)
-const modalTitle = ref('')
-const modalMessage = ref('')
-let confirmCallback = () => {}
+// Fetch cards from the API when the component is mounted
+onMounted(async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/cards`);
+    cards.value = response.data;
+  } catch (error) {
+    console.error('Error fetching cards:', error);
+  }
+});
 
-watch(cards, (newCards) => {
-  localStorage.setItem('cards', JSON.stringify(newCards))
-}, { deep: true })
+// Function to return the correct card component based on the type
+function getCardComponent(type: string) {
+  switch (type) {
+    case 'account-balance':
+      return AccountBalanceCard;
+    case 'spending-summary':
+      return SpendingSummaryCard;
+    case 'upcoming-bills':
+      return UpcomingBillsCard;
+    case 'budget-math':
+      return BudgetMathCard;
+    default:
+      return null;
+  }
+}
 
-const savedCards = JSON.parse(localStorage.getItem('cards') || '[]')
-cards.value = savedCards
+// Add a new card
+async function addCard(type: string) {
+  dropdownOpen.value = false; // Close dropdown after selection
+  const newCard = { type, name: `New ${type.replace('-', ' ')}`, props: {} };
+  try {
+    const response = await axios.post(`${API_URL}/api/cards`, newCard);
+    cards.value.push(response.data);
+  } catch (error) {
+    console.error('Error adding card:', error);
+  }
+}
 
-onMounted(() => {
-  categoriesStore.loadCategories()
-})
+// Edit a card
+async function editCard(index: number) {
+  const card = cards.value[index];
+
+  warningModal.value = {
+    visible: true,
+    title: 'Edit Card',
+    message: 'Enter a new name for the card:',
+    showInput: true,
+    onConfirm: async (inputValue?: string) => {
+      if (inputValue) {
+        card.name = inputValue;
+      }
+      warningModal.value.visible = false;
+
+      try {
+        const response = await axios.put(`http://localhost:3000/api/cards/${index}`, card);
+        cards.value[index] = response.data;
+      } catch (error) {
+        console.error('Error updating card:', error);
+      }
+    },
+    onCancel: () => {
+      warningModal.value.visible = false;
+    }
+  };
+}
+
+// Delete a card
+async function deleteCard(index: number) {
+  try {
+    await axios.delete(`http://localhost:3000/api/cards/${index}`);
+    cards.value.splice(index, 1);
+  } catch (error) {
+    console.error('Error deleting card:', error);
+  }
+}
+
+// Confirm delete card
+function confirmDeleteCard(index: number) {
+  const cardName = cards.value[index]?.name || 'this card'; // Fallback to 'this card' if name is missing
+
+  warningModal.value = {
+    visible: true,
+    title: 'Delete Card',
+    message: `Are you sure you want to delete "${cardName}"?`, // Include the card name in the message
+    showInput: false, // No input needed for deletion
+    onConfirm: async () => {
+      await deleteCard(index); // Call the existing deleteCard function
+      warningModal.value.visible = false; // Hide the modal after deletion
+    },
+    onCancel: () => {
+      warningModal.value.visible = false; // Simply hide the modal on cancellation
+    }
+  };
+}
+
+const warningModal = ref({
+  visible: false,
+  title: '',
+  message: '',
+  showInput: false,
+  onConfirm: () => {},
+  onCancel: () => {
+    warningModal.value.visible = false;
+  }
+});
+
+const dropdownOpen = ref(false);
+
+const cardTypes = [
+  { value: 'account-balance', label: 'Account Balance' },
+  { value: 'spending-summary', label: 'Spending Summary' },
+  { value: 'upcoming-bills', label: 'Upcoming Bills' },
+  { value: 'budget-math', label: 'Budget Math' }
+];
 
 function toggleDropdown() {
-  dropdownOpen.value = !dropdownOpen.value
+  dropdownOpen.value = !dropdownOpen.value;
 }
 
-function handleLogout() {
-  logout()
-  router.push('/')
-}
-
-function addCard() {
-  const id = Date.now()
-  cards.value.push({
-    id,
-    title: '',
-    content: '',
-    category: '',
-    color: '',
-    editing: true,
-    draftTitle: '',
-    draftContent: '',
-    draftCategory: '',
-    draftColor: '#ffffff'
-  })
-}
-
-function startEditing(card: any) {
-  card.draftTitle = card.title
-  card.draftContent = card.content
-  card.draftCategory = card.category
-  card.draftColor = card.color || '#ffffff'
-  card.editing = true
-}
-
-function cancelEditing(card: any) {
-  if (!card.title && !card.content) {
-    cards.value = cards.value.filter(c => c.id !== card.id)
-  } else {
-    card.editing = false
-  }
-}
-
-function saveEditing(card: any) {
-  // Save the changes
-  card.title = card.draftTitle
-  card.content = card.draftContent
-  card.category = card.draftCategory
-  card.color = card.draftColor
-  card.editing = false
-
-  // Update cards in localStorage
-  localStorage.setItem('cards', JSON.stringify(cards.value))
-}
-
-function confirmDelete(card: any) {
-  confirmAction(
-    'Delete Card',
-    'Are you sure you want to delete this card?',
-    () => {
-      cards.value = cards.value.filter(c => c.id !== card.id)
-      localStorage.setItem('cards', JSON.stringify(cards.value))  // Update localStorage after deletion
-    }
-  )
-}
-
-function getCardStyle(card: any) {
-  let color = ''
-
-  if (card.editing) {
-    color = card.draftColor || '#4B5563'
-  } else if (card.color && card.color !== '#ffffff') {
-    color = card.color
-  } else {
-    const category = categoriesStore.allCategories.find(cat => cat.name === card.category)
-    color = category?.color || '#4B5563'
-  }
-
-  return {
-    backgroundColor: `${color}40`,
-    border: `1px solid ${color}`,
-    boxShadow: `0 0 4px ${color}`,
-  }
-}
-
-function confirmAction(title: string, message: string, onConfirm: () => void) {
-  modalTitle.value = title
-  modalMessage.value = message
-  confirmCallback = onConfirm
-  showModal.value = true
-}
-
-function cancelModal() {
-  showModal.value = false
-}
-
-function runConfirm() {
-  showModal.value = false
-  confirmCallback()
+function closeDropdown() {
+  dropdownOpen.value = false;
 }
 </script>
