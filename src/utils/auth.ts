@@ -10,10 +10,13 @@ export function useAuth() {
   function login(username: string, password: string) {
     if (!username || !password) return false
     // Add real validation here if needed
-
-    isAuthenticated.value = true
-    localStorage.setItem('zeno-auth', 'true')
-    return true
+    if(username === 'admin' && password === 'password')
+    {
+      isAuthenticated.value = true
+      localStorage.setItem('zeno-auth', 'true')
+      return true
+    }
+    return false
   }
 
   function logout() {
