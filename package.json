@@ -14,11 +14,15 @@
     "mathjs": "^14.4.0",
     "node": "^22.15.0",
     "pinia": "^3.0.2",
+    "plaid": "^36.0.0",
+    "react-plaid-link": "^4.0.1",
     "vue": "^3.4.0",
     "vue-router": "^4.5.0",
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.10",
     "@vitejs/plugin-vue": "^5.0.0",
     "autoprefixer": "^10.4.0",
     "concurrently": "^9.1.2",
