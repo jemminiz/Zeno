@@ -104,7 +104,12 @@
 
       <!-- Accounts List -->
       <div class="mb-8 max-w-md mx-auto bg-gray-900 p-4 rounded shadow">
-        <h2 class="text-xl font-bold mb-4 text-white">Accounts</h2>
+        <h2 class="text-xl font-bold mb-4 text-white flex items-center justify-between">
+          Accounts
+          <span class="text-lg font-normal ml-4">
+            Total: ${{ accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0).toFixed(2) }}
+          </span>
+        </h2>
         <draggable
           v-model="accounts"
           item-key="id"
