@@ -12,6 +12,41 @@ app.use(cors());
 // In-memory storage for cards
 let cards = [];
 
+// In-memory storage for accounts
+let accounts = [];
+
+// For generating unique account IDs
+let nextAccountId = 1;
+
+// Fetch all accounts
+app.get('/api/accounts', (req, res) => {
+  res.json(accounts);
+});
+
+// Add a new account
+app.post('/api/accounts', (req, res) => {
+  const account = req.body;
+  if (!account.name) {
+    return res.status(400).json({ error: 'Account name is required' });
+  }
+  account.id = nextAccountId++;
+  accounts.push(account);
+  res.status(201).json(account);
+});
+
+// Update an existing account
+app.put('/api/accounts/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const idx = accounts.findIndex(acc => acc.id === id);
+  if (idx !== -1) {
+    const updatedAccount = req.body;
+    accounts[idx] = { ...accounts[idx], ...updatedAccount };
+    res.json(accounts[idx]);
+  } else {
+    res.status(404).json({ error: 'Account not found' });
+  }
+});
+
 // Routes
 
 // Fetch all cards
@@ -65,15 +100,16 @@ app.put('/api/cards/:index', (req, res) => {
   }
 });
 
-// Delete a card
-app.delete('/api/cards/:index', (req, res) => {
-  const index = parseInt(req.params.index, 10);
-
-  if (index >= 0 && index < cards.length) {
-    cards.splice(index, 1);
+// Delete an account
+app.delete('/api/accounts/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  console.log('Delete request for id:', id, 'Current accounts:', accounts);
+  const idx = accounts.findIndex(acc => acc.id === id);
+  if (idx !== -1) {
+    accounts.splice(idx, 1);
     res.status(204).send();
   } else {
-    res.status(404).json({ error: 'Card not found' });
+    res.status(404).json({ error: 'Account not found' });
   }
 });
 
